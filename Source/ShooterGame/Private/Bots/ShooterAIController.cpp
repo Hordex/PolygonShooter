@@ -66,6 +66,7 @@ void AShooterAIController::Respawn()
 
 void AShooterAIController::FindClosestEnemy()
 {
+	GLog->Log("Spierdalaj");
 }
 
 bool AShooterAIController::FindClosestEnemyWithLOS(AShooterCharacter* ExcludeEnemy)
@@ -96,15 +97,8 @@ bool AShooterAIController::FindClosestEnemyWithLOS(AShooterCharacter* ExcludeEne
 		}
 		if (BestPawn)
 		{
-			FRotator CurrentRotation = MyBot->GetActorRotation();
-			FRotator FocusRotation = (BestPawn->GetActorLocation() - MyBot->GetActorLocation()).ToOrientationRotator();
-			float YawRotationDifference = FMath::Abs((CurrentRotation - FocusRotation).Yaw);
-
-			if (YawRotationDifference > 70.0f)
-			{
-				SetEnemy(BestPawn);
-				bGotEnemy = true;
-			}
+			SetEnemy(BestPawn);
+			bGotEnemy = true;
 		}
 	}
 	return bGotEnemy;
@@ -154,7 +148,9 @@ bool AShooterAIController::HasWeaponLOSToEnemy(AActor* InEnemyActor, const bool 
 							FRotator FocusRotation = (HitChar->GetActorLocation() - MyBot->GetActorLocation()).ToOrientationRotator();
 							float YawRotationDifference = FMath::Abs((CurrentRotation - FocusRotation).Yaw);
 
-							if (YawRotationDifference > 70.0f)
+							GLog->Log(FString::SanitizeFloat(YawRotationDifference));
+
+							if (YawRotationDifference <= 70.0f)
 							{
 								bHasLOS = true;
 							}
@@ -238,7 +234,7 @@ void AShooterAIController::UpdateControlRotation(float DeltaTime, bool bUpdatePa
 	if( !FocalPoint.IsZero() && GetPawn())
 	{
 		FVector Direction = FocalPoint - GetPawn()->GetActorLocation();
-		FRotator NewControlRotation = FMath::Lerp (Direction.Rotation(), GetControlRotation(), DeltaTime * 2.0f);
+		FRotator NewControlRotation = FMath::Lerp(GetControlRotation(), Direction.Rotation(), DeltaTime * 10.0f);
 		
 		NewControlRotation.Yaw = FRotator::ClampAxis(NewControlRotation.Yaw);
 

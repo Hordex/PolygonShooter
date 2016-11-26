@@ -28,5 +28,5 @@ class UShooterCheatManager : public UCheatManager
 	void Cheat(const FString& Msg);
 
 	UFUNCTION(exec)
-	void SpawnBot();
+	void SpawnBot(int TeamNum = 1);
 };

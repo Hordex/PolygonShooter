@@ -65,7 +65,7 @@ void UShooterCheatManager::Cheat(const FString& Msg)
 	GetOuterAShooterPlayerController()->ServerCheat(Msg.Left(128));
 }
 
-void UShooterCheatManager::SpawnBot()
+void UShooterCheatManager::SpawnBot(int TeamNum)
 {
 	AShooterPlayerController* const MyPC = GetOuterAShooterPlayerController();
 	APawn* const MyPawn = MyPC->GetPawn();
@@ -75,6 +75,14 @@ void UShooterCheatManager::SpawnBot()
 	{
 		static int32 CheatBotNum = 50;
 		AShooterAIController* ShooterAIController = MyGame->CreateBot(CheatBotNum++);
+		
+		AShooterPlayerState* AIPlayerState = Cast<AShooterPlayerState>(ShooterAIController->PlayerState);
+		if (AIPlayerState && AIPlayerState->Role == ROLE_Authority)
+		{
+			AIPlayerState->SetTeamNum(TeamNum);
+			MyPC->ClientMessage(FString::Printf(TEXT("Team changed to: %d"), AIPlayerState->GetTeamNum()));
+		}
+
 		MyGame->RestartPlayer(ShooterAIController);		
 	}
 }

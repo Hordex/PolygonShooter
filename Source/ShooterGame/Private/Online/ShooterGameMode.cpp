@@ -18,7 +18,8 @@ AShooterGameMode::AShooterGameMode(const FObjectInitializer& ObjectInitializer) 
 	DefaultPawnClass = PlayerPawnOb.Class;
 	
 	static ConstructorHelpers::FClassFinder<APawn> BotPawnOb(TEXT("/Game/Blueprints/Pawns/BotPawn"));
-	BotPawnClass = BotPawnOb.Class;
+	BotPawnClass.Add(BotPawnOb.Class);
+	BotPawnClass.Add(BotPawnOb.Class);
 
 	HUDClass = AShooterHUD::StaticClass();
 	PlayerControllerClass = AShooterPlayerController::StaticClass();
@@ -344,9 +345,14 @@ bool AShooterGameMode::ShouldSpawnAtStartSpot(AController* Player)
 
 UClass* AShooterGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)
 {
-	if (InController->IsA<AShooterAIController>())
+	AShooterAIController * SAIC = Cast<AShooterAIController>(InController);
+	if (SAIC)
 	{
-		return BotPawnClass;
+		AShooterPlayerState* InControllerPlayerState = Cast<AShooterPlayerState>(SAIC->PlayerState);
+		if (InController)
+		{
+			return BotPawnClass[InControllerPlayerState->GetTeamNum()];
+		}
 	}
 
 	return Super::GetDefaultPawnClassForController_Implementation(InController);
@@ -424,9 +430,13 @@ bool AShooterGameMode::IsSpawnpointPreferred(APlayerStart* SpawnPoint, AControll
 {
 	ACharacter* MyPawn = Cast<ACharacter>((*DefaultPawnClass)->GetDefaultObject<ACharacter>());	
 	AShooterAIController* AIController = Cast<AShooterAIController>(Player);
-	if( AIController != nullptr )
+	if (AIController != nullptr)
 	{
-		MyPawn = Cast<ACharacter>(BotPawnClass->GetDefaultObject<ACharacter>());
+		AShooterPlayerState * AIPlayerState = Cast<AShooterPlayerState>(AIController->PlayerState);
+		if (AIPlayerState)
+		{
+			MyPawn = Cast<ACharacter>(BotPawnClass[AIPlayerState->GetTeamNum()]->GetDefaultObject<ACharacter>());
+		}
 	}
 	
 	if (MyPawn)

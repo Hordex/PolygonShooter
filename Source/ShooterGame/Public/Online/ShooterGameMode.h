@@ -17,7 +17,7 @@ class AShooterGameMode : public AGameMode
 
 	/** The bot pawn class */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=GameMode)
-	TSubclassOf<APawn> BotPawnClass;
+	TArray<TSubclassOf<APawn>> BotPawnClass;
 
 	UFUNCTION(exec)
 	void SetAllowBots(bool bInAllowBots, int32 InMaxBots = 8);

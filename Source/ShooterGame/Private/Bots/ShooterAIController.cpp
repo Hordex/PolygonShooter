@@ -66,34 +66,6 @@ void AShooterAIController::Respawn()
 
 void AShooterAIController::FindClosestEnemy()
 {
-	APawn* MyBot = GetPawn();
-	if (MyBot == NULL)
-	{
-		return;
-	}
-
-	const FVector MyLoc = MyBot->GetActorLocation();
-	float BestDistSq = MAX_FLT;
-	AShooterCharacter* BestPawn = NULL;
-
-	for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; ++It)
-	{
-		AShooterCharacter* TestPawn = Cast<AShooterCharacter>(*It);
-		if (TestPawn && TestPawn->IsAlive() && TestPawn->IsEnemyFor(this))
-		{
-			const float DistSq = (TestPawn->GetActorLocation() - MyLoc).SizeSquared();
-			if (DistSq < BestDistSq)
-			{
-				BestDistSq = DistSq;
-				BestPawn = TestPawn;
-			}
-		}
-	}
-
-	if (BestPawn)
-	{
-		SetEnemy(BestPawn);
-	}
 }
 
 bool AShooterAIController::FindClosestEnemyWithLOS(AShooterCharacter* ExcludeEnemy)
@@ -124,8 +96,15 @@ bool AShooterAIController::FindClosestEnemyWithLOS(AShooterCharacter* ExcludeEne
 		}
 		if (BestPawn)
 		{
-			SetEnemy(BestPawn);
-			bGotEnemy = true;
+			FRotator CurrentRotation = MyBot->GetActorRotation();
+			FRotator FocusRotation = (BestPawn->GetActorLocation() - MyBot->GetActorLocation()).ToOrientationRotator();
+			float YawRotationDifference = FMath::Abs((CurrentRotation - FocusRotation).Yaw);
+
+			if (YawRotationDifference > 70.0f)
+			{
+				SetEnemy(BestPawn);
+				bGotEnemy = true;
+			}
 		}
 	}
 	return bGotEnemy;
@@ -171,7 +150,14 @@ bool AShooterAIController::HasWeaponLOSToEnemy(AActor* InEnemyActor, const bool 
 					{
 						if (HitPlayerState->GetTeamNum() != MyPlayerState->GetTeamNum())
 						{
-							bHasLOS = true;
+							FRotator CurrentRotation = MyBot->GetActorRotation();
+							FRotator FocusRotation = (HitChar->GetActorLocation() - MyBot->GetActorLocation()).ToOrientationRotator();
+							float YawRotationDifference = FMath::Abs((CurrentRotation - FocusRotation).Yaw);
+
+							if (YawRotationDifference > 70.0f)
+							{
+								bHasLOS = true;
+							}
 						}
 					}
 				}
@@ -252,7 +238,7 @@ void AShooterAIController::UpdateControlRotation(float DeltaTime, bool bUpdatePa
 	if( !FocalPoint.IsZero() && GetPawn())
 	{
 		FVector Direction = FocalPoint - GetPawn()->GetActorLocation();
-		FRotator NewControlRotation = Direction.Rotation();
+		FRotator NewControlRotation = FMath::Lerp (Direction.Rotation(), GetControlRotation(), DeltaTime * 2.0f);
 		
 		NewControlRotation.Yaw = FRotator::ClampAxis(NewControlRotation.Yaw);
 

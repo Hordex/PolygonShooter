@@ -62,6 +62,7 @@ void AShooterAIController::BeginInactiveState()
 void AShooterAIController::Respawn()
 {
 	GetWorld()->GetAuthGameMode()->RestartPlayer(this);
+	SetEnemy(NULL);
 }
 
 void AShooterAIController::FindClosestEnemy()
@@ -177,11 +178,18 @@ void AShooterAIController::ShootEnemy()
 
 	bool bCanShoot = false;
 	AShooterCharacter* Enemy = GetEnemy();
-	if ( Enemy && ( Enemy->IsAlive() )&& (MyWeapon->GetCurrentAmmo() > 0) && ( MyWeapon->CanFire() == true ) )
+	if (Enemy && (MyWeapon->GetCurrentAmmo() > 0) && ( MyWeapon->CanFire() == true ) )
 	{
 		if (LineOfSightTo(Enemy, MyBot->GetActorLocation()))
 		{
-			bCanShoot = true;
+			if (Enemy->IsAlive())
+			{
+				bCanShoot = true;
+			}
+			else
+			{
+				SetEnemy(NULL);
+			}
 		}
 	}
 
@@ -231,21 +239,27 @@ void AShooterAIController::UpdateControlRotation(float DeltaTime, bool bUpdatePa
 {
 	// Look toward focus
 	FVector FocalPoint = GetFocalPoint();
-	if( !FocalPoint.IsZero() && GetPawn())
+	if (!GetPawn())
+		return;
+	FVector Direction;
+	if( !FocalPoint.IsZero() && FocalPoint.SizeSquared() < 100000000.0f)
 	{
-		FVector Direction = FocalPoint - GetPawn()->GetActorLocation();
-		FRotator NewControlRotation = FMath::Lerp(GetControlRotation(), Direction.Rotation(), DeltaTime * 10.0f);
-		
-		NewControlRotation.Yaw = FRotator::ClampAxis(NewControlRotation.Yaw);
+		Direction = FocalPoint - GetPawn()->GetActorLocation();
+	}
+	else
+	{
+		Direction = GetPawn()->GetActorForwardVector();
+	}
+	FRotator NewControlRotation = FMath::Lerp(GetControlRotation(), Direction.Rotation(), DeltaTime * 10.0f);
 
-		SetControlRotation(NewControlRotation);
+	NewControlRotation.Yaw = FRotator::ClampAxis(NewControlRotation.Yaw);
 
-		APawn* const P = GetPawn();
-		if (P && bUpdatePawn)
-		{
-			P->FaceRotation(NewControlRotation, DeltaTime);
-		}
-		
+	SetControlRotation(NewControlRotation);
+
+	APawn* const P = GetPawn();
+	if (P && bUpdatePawn)
+	{
+		P->FaceRotation(NewControlRotation, DeltaTime);
 	}
 }
 
